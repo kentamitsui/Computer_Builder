@@ -2,7 +2,7 @@
 const apiList = {
   cpu: "https://api.recursionist.io/builder/computers?type=cpu",
   gpu: "https://api.recursionist.io/builder/computers?type=gpu",
-  ram: "https://api.recursionist.io/builder/computers?type=ram",
+  memory: "https://api.recursionist.io/builder/computers?type=ram",
   hdd: "https://api.recursionist.io/builder/computers?type=hdd",
   ssd: "https://api.recursionist.io/builder/computers?type=ssd",
 };
@@ -31,6 +31,15 @@ const elementsList = {
 };
 
 // APIのデータ取得と解析に成功した場合にcallbackを呼び出す関数
+// function fetchData(apiURL) {
+//   return fetch(apiURL).then((response) => {
+//     if (!response.ok) {
+//       throw new Error(`Failed to fetch data from ${apiURL}`);
+//     }
+//     return response.json();
+//   });
+// }
+
 function fetchData(apiURL, callback) {
   fetch(apiURL)
     .then((response) => response.json())
@@ -47,7 +56,7 @@ function populateDropdown(dropdownElement, optionsData) {
 
   // ドロップダウンメニューを初期化
   dropdownElement.textContent = "";
-  // データに応じて
+  // 各データの選択肢のテキスト・値を設定し追加する
   optionsData.forEach((optionText) => {
     let option = document.createElement("option");
     option.text = optionText;
@@ -61,7 +70,7 @@ function populateBrands(data, brandElement, modelElement) {
   let brands = new Set();
   data.forEach((item) => brands.add(item.Brand));
 
-  // brandsを渡す前に配列に変換する事で、エラーハンドリングの確認を通過している
+  // brandsを渡す前に配列に変換する事で、エラーハンドリングチェックを通過している
   populateDropdown(brandElement, Array.from(brands));
 
   // ブランドの選択に応じてモデルの表示を変更するイベントリスナー
@@ -73,6 +82,7 @@ function populateBrands(data, brandElement, modelElement) {
   });
 
   // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
+  //
   populateModels(data, Array.from(brands)[0], modelElement);
 }
 
@@ -83,12 +93,119 @@ function populateModels(data, brand, modelElement) {
     .filter((item) => item.Brand === brand)
     .map((item) => item.Model);
 
-  // 選択したブランド名に応じて、モデル名をドロップダウンメニューに入力
   populateDropdown(modelElement, models);
 }
+
+// "Model"のデータ内から、容量の数値部分を抽出する関数
+function getStorageCapacity(modelName) {
+  const matchRegularExpression = modelName.match(/(\d+TB|\d+GB)/g);
+  return matchRegularExpression ? matchRegularExpression[0] : null;
+}
+
+// データからストレージの種類を取得する関数
+function populateStorageTypes(data, storageTypeElement) {
+  let types = new Set();
+  // Typeと一致したデータを選択項目に追加
+  data.forEach((item) => types.add(item.Type));
+  populateDropdown(storageTypeElement, Array.from(types));
+}
+
+// ストレージの種類と、容量の文字列データを基に
+// ドロップダウンメニューを作成・表示する関数
+function populateStorageCapacities(data, type, capacityElement) {
+  let capacities = new Set();
+
+  data
+    // まずデータをType別に抽出
+    .filter((item) => item.Type === type)
+    // 次にストレージ容量の文字列を取得
+    .forEach((item) => {
+      const capacityString = getStorageCapacity(item.Model);
+      // 文字列をSet()に格納
+      if (capacityString) capacities.add(capacityString);
+    });
+  // 上記のデータを基にドロップダウンメニューを作成
+  populateDropdown(capacityElement, Array.from(capacities));
+}
+
+// HDDとSSDのAPIレスポンスを取得・統合する関数
+// function fetchBothStorageData() {
+//   // 両データ配列をPromiss.allで取得し、concatで統合する
+//   return Promise.all([fetchData(apiList.hdd), fetchData(apiList.ssd)]).then(
+//     ([hddData, ssdData]) => {
+//       if (!hddData || !ssdData) {
+//         throw new Error("One of the datasets is missing");
+//       }
+//       return hddData.concat(ssdData);
+//     }
+//   );
+// }
 
 window.addEventListener("DOMContentLoaded", () => {
   fetchData(apiList.cpu, (data) => {
     populateBrands(data, elementsList.cpuBrands, elementsList.cpuModels);
   });
+
+  fetchData(apiList.gpu, (data) => {
+    populateBrands(data, elementsList.gpuBrands, elementsList.gpuModels);
+  });
+
+  fetchData(apiList.hdd, (data) => {
+    // Assuming HDD and SSD data are combined in the same API response
+    // If they are separate, you'll need to merge the data arrays
+
+    // Populate storage types
+    populateStorageTypes(data, elementsList.storagesType);
+
+    // Initial population of brands, models, and capacities
+    const initialType = elementsList.storagesType.value;
+    populateBrands(
+      data,
+      elementsList.storageBrands,
+      elementsList.storageModels
+    );
+    populateStorageCapacities(data, initialType, elementsList.storageCapacity);
+
+    // Update brands, models, and capacities based on selected storage type
+    elementsList.storagesType.addEventListener("change", (event) => {
+      const selectedType = event.target.value;
+      populateBrands(
+        data,
+        elementsList.storageBrands,
+        elementsList.storageModels
+      );
+      populateStorageCapacities(
+        data,
+        selectedType,
+        elementsList.storageCapacity
+      );
+    });
+  });
+
+  // fetchBothStorageData().then((data) => {
+  //   populateStorageTypes(data, elementsList.storagesType);
+
+  //   // ストレージのブランド・モデル・容量の初期化設定
+  //   const initialTypeValue = elementsList.storagesType.value;
+  //   populateBrands(
+  //     data,
+  //     elementsList.storageBrands,
+  //     elementsList.storageModels
+  //   );
+  //   populateStorageCapacities(
+  //     data,
+  //     initialTypeValue,
+  //     elementsList.storageCapacity
+  //   );
+
+  //   elementsList.storagesType.addEventListener("change", (event) => {
+  //     const selectType = event.target.value;
+  //     populateBrands(
+  //       data,
+  //       elementsList.storageBrands,
+  //       elementsList.storageModels
+  //     );
+  //     populateStorageCapacities(data, selectType, elementsList.storageCapacity);
+  //   });
+  // });
 });
