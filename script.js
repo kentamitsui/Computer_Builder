@@ -98,7 +98,9 @@ function populateModels(data, brand, modelElement) {
 
 // "Model"のデータ内から、容量の数値部分を抽出する関数
 function getStorageCapacity(modelName) {
-  const matchRegularExpression = modelName.match(/(\d+TB|\d+GB)/g);
+  // "d+"は一桁以上の数値文字列と合致する部分を抽出する
+  const matchRegularExpression = modelName.match(/(\d+TB|\d+GB)/);
+  // console.log(matchRegularExpression[0]);
   return matchRegularExpression ? matchRegularExpression[0] : null;
 }
 
@@ -108,6 +110,24 @@ function populateStorageTypes(data, storageTypeElement) {
   // Typeと一致したデータを選択項目に追加
   data.forEach((item) => types.add(item.Type));
   populateDropdown(storageTypeElement, Array.from(types));
+}
+
+// 文字列のストレージ容量をGBの数値単位（1-1000）で参照できるよう変換する関数
+function convertToGB(str) {
+  if (str.endsWith("TB")) {
+    return parseInt(str) * 1000;
+  } else if (str.endsWith("GB")) {
+    return parseInt(str);
+  }
+  return 0;
+}
+
+// 上記の関数によって変換された数値を、元の単位に戻す関数
+function convertToOriginalUnit(value) {
+  if (value >= 1000) {
+    return `${value / 1000}TB`;
+  }
+  return `${value}GB`;
 }
 
 // ストレージの種類と、容量の文字列データを基に
@@ -124,22 +144,16 @@ function populateStorageCapacities(data, type, capacityElement) {
       // 文字列をSet()に格納
       if (capacityString) capacities.add(capacityString);
     });
-  // 上記のデータを基にドロップダウンメニューを作成
-  populateDropdown(capacityElement, Array.from(capacities));
-}
 
-// HDDとSSDのAPIレスポンスを取得・統合する関数
-// function fetchBothStorageData() {
-//   // 両データ配列をPromiss.allで取得し、concatで統合する
-//   return Promise.all([fetchData(apiList.hdd), fetchData(apiList.ssd)]).then(
-//     ([hddData, ssdData]) => {
-//       if (!hddData || !ssdData) {
-//         throw new Error("One of the datasets is missing");
-//       }
-//       return hddData.concat(ssdData);
-//     }
-//   );
-// }
+  // 1.map関数で配列を生成 2. 降順でソート 3. ソート後の文字列をmap関数で単位毎に配列を生成
+  const sortCapacityStrings = Array.from(capacities)
+    .map((capacity) => convertToGB(capacity))
+    .sort((a, b) => a - b)
+    .map((value) => convertToOriginalUnit(value));
+
+  // 上記のデータを基にドロップダウンメニューを作成
+  populateDropdown(capacityElement, sortCapacityStrings);
+}
 
 window.addEventListener("DOMContentLoaded", () => {
   fetchData(apiList.cpu, (data) => {
@@ -151,13 +165,8 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   fetchData(apiList.hdd, (data) => {
-    // Assuming HDD and SSD data are combined in the same API response
-    // If they are separate, you'll need to merge the data arrays
-
-    // Populate storage types
     populateStorageTypes(data, elementsList.storagesType);
 
-    // Initial population of brands, models, and capacities
     const initialType = elementsList.storagesType.value;
     populateBrands(
       data,
@@ -166,7 +175,6 @@ window.addEventListener("DOMContentLoaded", () => {
     );
     populateStorageCapacities(data, initialType, elementsList.storageCapacity);
 
-    // Update brands, models, and capacities based on selected storage type
     elementsList.storagesType.addEventListener("change", (event) => {
       const selectedType = event.target.value;
       populateBrands(
@@ -181,31 +189,4 @@ window.addEventListener("DOMContentLoaded", () => {
       );
     });
   });
-
-  // fetchBothStorageData().then((data) => {
-  //   populateStorageTypes(data, elementsList.storagesType);
-
-  //   // ストレージのブランド・モデル・容量の初期化設定
-  //   const initialTypeValue = elementsList.storagesType.value;
-  //   populateBrands(
-  //     data,
-  //     elementsList.storageBrands,
-  //     elementsList.storageModels
-  //   );
-  //   populateStorageCapacities(
-  //     data,
-  //     initialTypeValue,
-  //     elementsList.storageCapacity
-  //   );
-
-  //   elementsList.storagesType.addEventListener("change", (event) => {
-  //     const selectType = event.target.value;
-  //     populateBrands(
-  //       data,
-  //       elementsList.storageBrands,
-  //       elementsList.storageModels
-  //     );
-  //     populateStorageCapacities(data, selectType, elementsList.storageCapacity);
-  //   });
-  // });
 });
