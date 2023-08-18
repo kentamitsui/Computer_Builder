@@ -67,13 +67,36 @@ function populateBrands(data, brandElement, modelElement) {
   // ブランドの選択に応じてモデルの表示を変更するイベントリスナー
   brandElement.addEventListener("change", (event) => {
     // ドロップダウン内のブランド名を取得する
-    let selectedBrand = event.target.value;
+    let selectBrand = event.target.value;
     // ブランド名に応じてモデル名が更新される
-    populateModels(data, selectedBrand, modelElement);
+    populateModels(data, selectBrand, modelElement);
   });
 
   // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
   populateModels(data, sortBrands[0], modelElement);
+}
+
+// ストレージのブランド名を動的に表示する関数
+function populateStorageBrands(data, brandElement, modelElement) {
+  let brands = new Set();
+  data.forEach((item) => brands.add(item.Brand));
+
+  // brandsを渡す前に配列に変換する事で、エラーチェックを通過している
+  const sortBrands = Array.from(brands).sort();
+  populateDropdown(brandElement, sortBrands);
+
+  // ブランドの選択に応じてモデルの表示を変更するイベントリスナー
+  brandElement.addEventListener("change", (event) => {
+    // ドロップダウン内のブランド名を取得する
+    let selectBrand = event.target.value;
+    let selectCapacity = elementsList.storageCapacity.value;
+    // ブランド名に応じてモデル名が更新される
+    populateStorageModels(data, selectBrand, selectCapacity, modelElement);
+  });
+
+  const initialCapacity = elementsList.storageCapacity.value;
+  // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
+  populateStorageModels(data, sortBrands[0], initialCapacity, modelElement);
 }
 
 // ブランド名に応じたモデル名を取得・更新する関数
@@ -81,6 +104,19 @@ function populateModels(data, brand, modelElement) {
   // 取得したデータから、ブランド名と一致するアイテム(model)を全て格納した配列を新規で作成
   let models = data
     .filter((item) => item.Brand === brand)
+    .map((item) => item.Model)
+    .sort();
+
+  populateDropdown(modelElement, models);
+}
+
+// ストレージのモデル名を記憶容量に合わせて動的に表示する関数
+function populateStorageModels(data, brand, capacity, modelElement) {
+  let models = data
+    .filter(
+      (item) =>
+        item.Brand === brand && getStorageCapacity(item.Model) === capacity
+    )
     .map((item) => item.Model)
     .sort();
 
@@ -159,16 +195,24 @@ window.addEventListener("DOMContentLoaded", () => {
     populateStorageTypes(data, elementsList.storagesType);
 
     const initialType = elementsList.storagesType.value;
-    populateBrands(
+    const initialCapacity = elementsList.storageCapacity.value;
+    populateStorageBrands(
       data,
       elementsList.storageBrands,
       elementsList.storageModels
     );
     populateStorageCapacities(data, initialType, elementsList.storageCapacity);
 
+    populateStorageModels(
+      data,
+      elementsList.storageBrands.value,
+      initialCapacity,
+      elementsList.storageModels
+    );
+
     elementsList.storagesType.addEventListener("change", (event) => {
       const selectedType = event.target.value;
-      populateBrands(
+      populateStorageBrands(
         data,
         elementsList.storageBrands,
         elementsList.storageModels
@@ -177,6 +221,17 @@ window.addEventListener("DOMContentLoaded", () => {
         data,
         selectedType,
         elementsList.storageCapacity
+      );
+    });
+
+    elementsList.storageCapacity.addEventListener("change", (event) => {
+      let selectedCapacity = event.target.value;
+      let selectedBrand = elementsList.storageBrands.value;
+      populateStorageModels(
+        data,
+        selectedBrand,
+        selectedCapacity,
+        elementsList.storageModels
       );
     });
   });
