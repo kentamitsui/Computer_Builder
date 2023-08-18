@@ -30,16 +30,6 @@ const elementsList = {
   storageModels: getElements("storageModelsMenu"),
 };
 
-// APIのデータ取得と解析に成功した場合にcallbackを呼び出す関数
-// function fetchData(apiURL) {
-//   return fetch(apiURL).then((response) => {
-//     if (!response.ok) {
-//       throw new Error(`Failed to fetch data from ${apiURL}`);
-//     }
-//     return response.json();
-//   });
-// }
-
 function fetchData(apiURL, callback) {
   fetch(apiURL)
     .then((response) => response.json())
@@ -70,8 +60,9 @@ function populateBrands(data, brandElement, modelElement) {
   let brands = new Set();
   data.forEach((item) => brands.add(item.Brand));
 
-  // brandsを渡す前に配列に変換する事で、エラーハンドリングチェックを通過している
-  populateDropdown(brandElement, Array.from(brands));
+  // brandsを渡す前に配列に変換する事で、エラーチェックを通過している
+  const sortBrands = Array.from(brands).sort();
+  populateDropdown(brandElement, sortBrands);
 
   // ブランドの選択に応じてモデルの表示を変更するイベントリスナー
   brandElement.addEventListener("change", (event) => {
@@ -82,8 +73,7 @@ function populateBrands(data, brandElement, modelElement) {
   });
 
   // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
-  //
-  populateModels(data, Array.from(brands)[0], modelElement);
+  populateModels(data, sortBrands[0], modelElement);
 }
 
 // ブランド名に応じたモデル名を取得・更新する関数
@@ -91,17 +81,10 @@ function populateModels(data, brand, modelElement) {
   // 取得したデータから、ブランド名と一致するアイテム(model)を全て格納した配列を新規で作成
   let models = data
     .filter((item) => item.Brand === brand)
-    .map((item) => item.Model);
+    .map((item) => item.Model)
+    .sort();
 
   populateDropdown(modelElement, models);
-}
-
-// "Model"のデータ内から、容量の数値部分を抽出する関数
-function getStorageCapacity(modelName) {
-  // "d+"は一桁以上の数値文字列と合致する部分を抽出する
-  const matchRegularExpression = modelName.match(/(\d+TB|\d+GB)/);
-  // console.log(matchRegularExpression[0]);
-  return matchRegularExpression ? matchRegularExpression[0] : null;
 }
 
 // データからストレージの種類を取得する関数
@@ -110,6 +93,14 @@ function populateStorageTypes(data, storageTypeElement) {
   // Typeと一致したデータを選択項目に追加
   data.forEach((item) => types.add(item.Type));
   populateDropdown(storageTypeElement, Array.from(types));
+}
+
+// "Model"のデータ内から、容量の数値部分を抽出する関数
+function getStorageCapacity(modelName) {
+  // "d+"は一桁以上の数値文字列と合致する部分を抽出する
+  const matchRegularExpression = modelName.match(/(\d+TB|\d+GB)/);
+  // console.log(matchRegularExpression[0]);
+  return matchRegularExpression ? matchRegularExpression[0] : null;
 }
 
 // 文字列のストレージ容量をGBの数値単位（1-1000）で参照できるよう変換する関数
