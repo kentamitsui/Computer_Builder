@@ -36,8 +36,32 @@ function fetchData(apiURL, callback) {
     .then(callback);
 }
 
+function fetchStorageData(apiURL, callback) {
+  return fetch(apiURL).then((response) => {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data from ${apiURL}`);
+    }
+    return response.json();
+  });
+}
+
+// HDD・SSD両方のAPIレスポンスデータを統合する関数
+function mergeStorageData() {
+  return Promise.all([
+    fetchStorageData(apiList.hdd),
+    fetchStorageData(apiList.ssd),
+  ]).then(([hddData, ssdData]) => {
+    if (!hddData || !ssdData) {
+      throw new Error("One of the datasets is missing");
+    }
+
+    // concatで両データを統合する
+    return hddData.concat(ssdData);
+  });
+}
+
 // ドロップダウンメニューを作成・表示する関数
-function populateDropdown(dropdownElement, optionsData) {
+function createDropdown(dropdownElement, optionsData) {
   // エラーハンドリング
   if (!dropdownElement || !Array.isArray(optionsData)) {
     console.error("引数が無効です");
@@ -56,34 +80,36 @@ function populateDropdown(dropdownElement, optionsData) {
 }
 
 // ブランド・モデル名を取得・更新する関数
-function populateBrands(data, brandElement, modelElement) {
+function createBrands(data, brandElement, modelElement) {
   let brands = new Set();
   data.forEach((item) => brands.add(item.Brand));
 
   // brandsを渡す前に配列に変換する事で、エラーチェックを通過している
   const sortBrands = Array.from(brands).sort();
-  populateDropdown(brandElement, sortBrands);
+  createDropdown(brandElement, sortBrands);
 
   // ブランドの選択に応じてモデルの表示を変更するイベントリスナー
   brandElement.addEventListener("change", (event) => {
     // ドロップダウン内のブランド名を取得する
     let selectBrand = event.target.value;
     // ブランド名に応じてモデル名が更新される
-    populateModels(data, selectBrand, modelElement);
+    createModels(data, selectBrand, modelElement);
   });
 
   // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
-  populateModels(data, sortBrands[0], modelElement);
+  createModels(data, sortBrands[0], modelElement);
 }
 
 // ストレージのブランド名を動的に表示する関数
-function populateStorageBrands(data, brandElement, modelElement) {
+function createStorageBrands(data, type, brandElement, modelElement) {
   let brands = new Set();
-  data.forEach((item) => brands.add(item.Brand));
+  data
+    .filter((item) => item.Type === type)
+    .forEach((item) => brands.add(item.Brand));
 
   // brandsを渡す前に配列に変換する事で、エラーチェックを通過している
   const sortBrands = Array.from(brands).sort();
-  populateDropdown(brandElement, sortBrands);
+  createDropdown(brandElement, sortBrands);
 
   // ブランドの選択に応じてモデルの表示を変更するイベントリスナー
   brandElement.addEventListener("change", (event) => {
@@ -91,27 +117,27 @@ function populateStorageBrands(data, brandElement, modelElement) {
     let selectBrand = event.target.value;
     let selectCapacity = elementsList.storageCapacity.value;
     // ブランド名に応じてモデル名が更新される
-    populateStorageModels(data, selectBrand, selectCapacity, modelElement);
+    createStorageModels(data, selectBrand, selectCapacity, modelElement);
   });
 
   const initialCapacity = elementsList.storageCapacity.value;
   // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
-  populateStorageModels(data, sortBrands[0], initialCapacity, modelElement);
+  createStorageModels(data, sortBrands[0], initialCapacity, modelElement);
 }
 
 // ブランド名に応じたモデル名を取得・更新する関数
-function populateModels(data, brand, modelElement) {
+function createModels(data, brand, modelElement) {
   // 取得したデータから、ブランド名と一致するアイテム(model)を全て格納した配列を新規で作成
   let models = data
     .filter((item) => item.Brand === brand)
     .map((item) => item.Model)
     .sort();
 
-  populateDropdown(modelElement, models);
+  createDropdown(modelElement, models);
 }
 
 // ストレージのモデル名を記憶容量に合わせて動的に表示する関数
-function populateStorageModels(data, brand, capacity, modelElement) {
+function createStorageModels(data, brand, capacity, modelElement) {
   let models = data
     .filter(
       (item) =>
@@ -120,15 +146,16 @@ function populateStorageModels(data, brand, capacity, modelElement) {
     .map((item) => item.Model)
     .sort();
 
-  populateDropdown(modelElement, models);
+  createDropdown(modelElement, models);
 }
 
 // データからストレージの種類を取得する関数
-function populateStorageTypes(data, storageTypeElement) {
+function createStorageTypes(data, storageTypeElement) {
   let types = new Set();
   // Typeと一致したデータを選択項目に追加
   data.forEach((item) => types.add(item.Type));
-  populateDropdown(storageTypeElement, Array.from(types));
+
+  createDropdown(storageTypeElement, Array.from(types));
 }
 
 // "Model"のデータ内から、容量の数値部分を抽出する関数
@@ -159,7 +186,7 @@ function convertToOriginalUnit(value) {
 
 // ストレージの種類と、容量の文字列データを基に
 // ドロップダウンメニューを作成・表示する関数
-function populateStorageCapacities(data, type, capacityElement) {
+function createStorageCapacities(data, type, capacityElement) {
   let capacities = new Set();
 
   data
@@ -179,31 +206,32 @@ function populateStorageCapacities(data, type, capacityElement) {
     .map((value) => convertToOriginalUnit(value));
 
   // 上記のデータを基にドロップダウンメニューを作成
-  populateDropdown(capacityElement, sortCapacityStrings);
+  createDropdown(capacityElement, sortCapacityStrings);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
   fetchData(apiList.cpu, (data) => {
-    populateBrands(data, elementsList.cpuBrands, elementsList.cpuModels);
+    createBrands(data, elementsList.cpuBrands, elementsList.cpuModels);
   });
 
   fetchData(apiList.gpu, (data) => {
-    populateBrands(data, elementsList.gpuBrands, elementsList.gpuModels);
+    createBrands(data, elementsList.gpuBrands, elementsList.gpuModels);
   });
 
-  fetchData(apiList.hdd, (data) => {
-    populateStorageTypes(data, elementsList.storagesType);
+  mergeStorageData().then((data) => {
+    createStorageTypes(data, elementsList.storagesType);
 
     const initialType = elementsList.storagesType.value;
     const initialCapacity = elementsList.storageCapacity.value;
-    populateStorageBrands(
+    createStorageBrands(
       data,
+      initialType,
       elementsList.storageBrands,
       elementsList.storageModels
     );
-    populateStorageCapacities(data, initialType, elementsList.storageCapacity);
+    createStorageCapacities(data, initialType, elementsList.storageCapacity);
 
-    populateStorageModels(
+    createStorageModels(
       data,
       elementsList.storageBrands.value,
       initialCapacity,
@@ -212,22 +240,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
     elementsList.storagesType.addEventListener("change", (event) => {
       const selectedType = event.target.value;
-      populateStorageBrands(
+      createStorageBrands(
         data,
+        selectedType,
         elementsList.storageBrands,
         elementsList.storageModels
       );
-      populateStorageCapacities(
-        data,
-        selectedType,
-        elementsList.storageCapacity
-      );
+      createStorageCapacities(data, selectedType, elementsList.storageCapacity);
     });
 
     elementsList.storageCapacity.addEventListener("change", (event) => {
       let selectedCapacity = event.target.value;
       let selectedBrand = elementsList.storageBrands.value;
-      populateStorageModels(
+      createStorageModels(
         data,
         selectedBrand,
         selectedCapacity,
