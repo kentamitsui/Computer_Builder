@@ -30,16 +30,10 @@ const elementsList = {
   storageModels: getElements("storageModelsMenu"),
 };
 
-function fetchData(apiURL, callback) {
-  fetch(apiURL)
-    .then((response) => response.json())
-    .then(callback);
-}
-
-function fetchStorageData(apiURL, callback) {
+function fetchData(apiURL) {
   return fetch(apiURL).then((response) => {
     if (!response.ok) {
-      throw new Error(`Failed to fetch data from ${apiURL}`);
+      throw new Error(`${apiURL}からのデータフェッチに失敗しました`);
     }
     return response.json();
   });
@@ -47,17 +41,16 @@ function fetchStorageData(apiURL, callback) {
 
 // HDD・SSD両方のAPIレスポンスデータを統合する関数
 function mergeStorageData() {
-  return Promise.all([
-    fetchStorageData(apiList.hdd),
-    fetchStorageData(apiList.ssd),
-  ]).then(([hddData, ssdData]) => {
-    if (!hddData || !ssdData) {
-      throw new Error("One of the datasets is missing");
-    }
+  return Promise.all([fetchData(apiList.hdd), fetchData(apiList.ssd)]).then(
+    ([hddData, ssdData]) => {
+      if (!hddData || !ssdData) {
+        throw new Error("データセットが見つかりません");
+      }
 
-    // concatで両データを統合する
-    return hddData.concat(ssdData);
-  });
+      // concatで両データを統合する
+      return hddData.concat(ssdData);
+    }
+  );
 }
 
 // ドロップダウンメニューを作成・表示する関数
@@ -100,6 +93,27 @@ function createBrands(data, brandElement, modelElement) {
   createModels(data, sortBrands[0], modelElement);
 }
 
+function createMemoryBrands(data, brandElement, modelElement) {
+  let brands = new Set();
+  data.forEach((item) => brands.add(item.Brand));
+
+  // brandsを渡す前に配列に変換する事で、エラーチェックを通過している
+  const sortBrands = Array.from(brands).sort();
+  createDropdown(brandElement, sortBrands);
+
+  const memorySheets = elementsList.numbersOfMemory;
+  // メモリーの枚数を変更する度に取得するイベントリスナー
+  brandElement.addEventListener("change", (event) => {
+    let selectBrand = event.target.value;
+    let selectSheets = elementsList.numbersOfMemory.value;
+    createMemoryModels(data, selectBrand, selectSheets, modelElement);
+  });
+
+  const initialSheets = memorySheets.options[memorySheets.selectedIndex].text;
+  // console.log(initialSheets);
+  createMemoryModels(data, sortBrands[0], initialSheets, modelElement);
+}
+
 // ストレージのブランド名を動的に表示する関数
 function createStorageBrands(data, type, brandElement, modelElement) {
   let brands = new Set();
@@ -133,6 +147,29 @@ function createModels(data, brand, modelElement) {
     .map((item) => item.Model)
     .sort();
 
+  createDropdown(modelElement, models);
+}
+
+// "Model"のデータ内から、メモリーの数値部分を抽出する関数
+function getMemorySlots(modelName) {
+  const matchRegularExpression = modelName.match(/(\d+x)/);
+  // console.log(matchRegularExpression[0]);
+  return matchRegularExpression ? matchRegularExpression[0] : null;
+}
+
+// メモリーのモデル名をスロット数に合わせて動的に表示する関数
+function createMemoryModels(data, brand, sheets, modelElement) {
+  let models = data
+    .filter(
+      (item) =>
+        // getMemorySlots関数によって抽出される文字列が"2x"となっているので、
+        // sheetsに"x"を足すことで適切にフィルタリングを行う
+        item.Brand === brand && getMemorySlots(item.Model) === sheets + "x"
+    )
+    .map((item) => item.Model)
+    .sort();
+
+  // console.log(models);
   createDropdown(modelElement, models);
 }
 
@@ -210,12 +247,34 @@ function createStorageCapacities(data, type, capacityElement) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  fetchData(apiList.cpu, (data) => {
+  fetchData(apiList.cpu).then((data) => {
     createBrands(data, elementsList.cpuBrands, elementsList.cpuModels);
   });
 
-  fetchData(apiList.gpu, (data) => {
+  fetchData(apiList.gpu).then((data) => {
     createBrands(data, elementsList.gpuBrands, elementsList.gpuModels);
+  });
+
+  fetchData(apiList.memory).then((data) => {
+    // console.log(data);
+    createMemoryBrands(
+      data,
+      elementsList.memoryBrands,
+      elementsList.memoryModels
+    );
+
+    elementsList.numbersOfMemory.addEventListener("change", (event) => {
+      let selectBrand = elementsList.memoryBrands.value;
+      let selectSheetsText =
+        event.target.options[event.target.selectedIndex].text;
+      createMemoryModels(
+        data,
+        selectBrand,
+        selectSheetsText,
+        elementsList.memoryModels
+      );
+      // console.log(selectSheetsText);
+    });
   });
 
   mergeStorageData().then((data) => {
