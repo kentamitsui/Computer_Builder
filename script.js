@@ -247,12 +247,40 @@ function createStorageCapacities(data, type, capacityElement) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  function getLogData(...elementIds) {
+    elementIds.forEach((elementId) => {
+      const element = document.getElementById(elementId);
+      if (element.options.length > 0) {
+        const selectOption = element.options[element.selectedIndex].text;
+        console.log(`${elementId}: ${selectOption}`);
+      } else {
+        console.error(`${elementId} is empty`);
+      }
+    });
+  }
+
+  function addChangeListenerToDropdown(...elementIds) {
+    getLogData(...elementIds);
+
+    elementIds.forEach((elementId) => {
+      document
+        .getElementById(elementId)
+        .addEventListener("change", () => getLogData(...elementIds));
+    });
+  }
+
   fetchData(apiList.cpu).then((data) => {
     createBrands(data, elementsList.cpuBrands, elementsList.cpuModels);
+
+    addChangeListenerToDropdown("cpuBrandsMenu");
+    addChangeListenerToDropdown("cpuModelsMenu");
   });
 
   fetchData(apiList.gpu).then((data) => {
     createBrands(data, elementsList.gpuBrands, elementsList.gpuModels);
+
+    addChangeListenerToDropdown("gpuBrandsMenu");
+    addChangeListenerToDropdown("gpuModelsMenu");
   });
 
   fetchData(apiList.memory).then((data) => {
@@ -262,6 +290,10 @@ window.addEventListener("DOMContentLoaded", () => {
       elementsList.memoryBrands,
       elementsList.memoryModels
     );
+
+    addChangeListenerToDropdown("numbersOfMemory");
+    addChangeListenerToDropdown("memoryBrandsMenu");
+    addChangeListenerToDropdown("memoryModelsMenu");
 
     elementsList.numbersOfMemory.addEventListener("change", (event) => {
       let selectBrand = elementsList.memoryBrands.value;
@@ -297,6 +329,11 @@ window.addEventListener("DOMContentLoaded", () => {
       elementsList.storageModels
     );
 
+    addChangeListenerToDropdown("storagesType");
+    addChangeListenerToDropdown("storageCapacity");
+    addChangeListenerToDropdown("storageBrandsMenu");
+    addChangeListenerToDropdown("storageModelsMenu");
+
     elementsList.storagesType.addEventListener("change", (event) => {
       const selectedType = event.target.value;
       createStorageBrands(
@@ -320,3 +357,54 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+// 全てのドロップダウン要素で値が満たされているか確認する関数
+function allDropdownsSelected() {
+  const dropdownElements = [
+    "cpuBrandsMenu",
+    "cpuModelsMenu",
+    "gpuBrandsMenu",
+    "gpuModelsMenu",
+    "numbersOfMemory",
+    "memoryBrandsMenu",
+    "memoryModelsMenu",
+    "storagesType",
+    "storageCapacity",
+    "storageBrandsMenu",
+    "storageModelsMenu",
+  ];
+
+  for (let dropdownId of dropdownElements) {
+    const dropdown = document.getElementById(dropdownId);
+    // 各ドロップダウン(option)の値が全て存在していればtrue、
+    // 一つでも空欄があればfalseを返す
+    if (!dropdown.options[dropdown.selectedIndex]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// 選択されたメニューの文字列データを表示する関数
+function displaySelectMenu() {
+  if (!allDropdownsSelected()) {
+    console.error("空欄があります");
+    alert("空欄があります");
+    return;
+  }
+
+  let displayText = "";
+  const dropdowns = document.querySelectorAll("select");
+  dropdowns.forEach((dropdown) => {
+    displayText += `${dropdown.id}: ${
+      dropdown.options[dropdown.selectedIndex].text
+    }<br>`;
+  });
+
+  document.getElementById("displayStructure").innerHTML = displayText;
+}
+
+// クリックしたら各パーツの文字列データを表示する
+document
+  .getElementById("calcPerformance")
+  .addEventListener("click", displaySelectMenu);
