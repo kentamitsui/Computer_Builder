@@ -53,6 +53,22 @@ function mergeStorageData() {
   );
 }
 
+// パーツのベンチマークの数値を取得する関数
+function getBenchmark(data, brand, model) {
+  const item = data.find(
+    (item) => item.Brand === brand && item.Model === model
+  );
+  return item ? item.Benchmark : console.error("値がありません");
+}
+
+function getBenchmarkForChangeModel(data, brands, models) {
+  models.addEventListener("change", () => {
+    const selectedBrand = brands.value;
+    const selectedModel = models.value;
+    console.log(getBenchmark(data, selectedBrand, selectedModel));
+  });
+}
+
 // ドロップダウンメニューを作成・表示する関数
 function createDropdown(dropdownElement, optionsData) {
   // エラーハンドリング
@@ -87,10 +103,36 @@ function createBrands(data, brandElement, modelElement) {
     let selectBrand = event.target.value;
     // ブランド名に応じてモデル名が更新される
     createModels(data, selectBrand, modelElement);
+
+    const selectedBrand = brandElement.value;
+    const selectedModel = modelElement.value;
+    console.log(getBenchmark(data, selectedBrand, selectedModel));
   });
 
   // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
   createModels(data, sortBrands[0], modelElement);
+
+  // モデル名の変更に応じてベンチマークの数値を取得する
+  getBenchmarkForChangeModel(data, brandElement, modelElement);
+}
+
+// ブランド名に応じたモデル名を取得・更新する関数
+function createModels(data, brand, modelElement) {
+  // 取得したデータから、ブランド名と一致するアイテム(model)を全て格納した配列を新規で作成
+  let models = data
+    .filter((item) => item.Brand === brand)
+    .map((item) => item.Model)
+    .sort();
+
+  createDropdown(modelElement, models);
+}
+
+////////// メモリー部分の処理についてのメソッド //////////
+// "Model"のデータ内から、メモリーの数値部分を抽出する関数
+function getMemorySlots(modelName) {
+  const matchRegularExpression = modelName.match(/(\d+x)/);
+  // console.log(matchRegularExpression[0]);
+  return matchRegularExpression ? matchRegularExpression[0] : null;
 }
 
 function createMemoryBrands(data, brandElement, modelElement) {
@@ -107,54 +149,17 @@ function createMemoryBrands(data, brandElement, modelElement) {
     let selectBrand = event.target.value;
     let selectSheets = elementsList.numbersOfMemory.value;
     createMemoryModels(data, selectBrand, selectSheets, modelElement);
+
+    const selectedBrand = event.target.value;
+    const selectedModel = elementsList.memoryModels.value;
+    console.log(getBenchmark(data, selectedBrand, selectedModel));
   });
 
   const initialSheets = memorySheets.options[memorySheets.selectedIndex].text;
   // console.log(initialSheets);
   createMemoryModels(data, sortBrands[0], initialSheets, modelElement);
-}
 
-// ストレージのブランド名を動的に表示する関数
-function createStorageBrands(data, type, brandElement, modelElement) {
-  let brands = new Set();
-  data
-    .filter((item) => item.Type === type)
-    .forEach((item) => brands.add(item.Brand));
-
-  // brandsを渡す前に配列に変換する事で、エラーチェックを通過している
-  const sortBrands = Array.from(brands).sort();
-  createDropdown(brandElement, sortBrands);
-
-  // ブランドの選択に応じてモデルの表示を変更するイベントリスナー
-  brandElement.addEventListener("change", (event) => {
-    // ドロップダウン内のブランド名を取得する
-    let selectBrand = event.target.value;
-    let selectCapacity = elementsList.storageCapacity.value;
-    // ブランド名に応じてモデル名が更新される
-    createStorageModels(data, selectBrand, selectCapacity, modelElement);
-  });
-
-  const initialCapacity = elementsList.storageCapacity.value;
-  // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
-  createStorageModels(data, sortBrands[0], initialCapacity, modelElement);
-}
-
-// ブランド名に応じたモデル名を取得・更新する関数
-function createModels(data, brand, modelElement) {
-  // 取得したデータから、ブランド名と一致するアイテム(model)を全て格納した配列を新規で作成
-  let models = data
-    .filter((item) => item.Brand === brand)
-    .map((item) => item.Model)
-    .sort();
-
-  createDropdown(modelElement, models);
-}
-
-// "Model"のデータ内から、メモリーの数値部分を抽出する関数
-function getMemorySlots(modelName) {
-  const matchRegularExpression = modelName.match(/(\d+x)/);
-  // console.log(matchRegularExpression[0]);
-  return matchRegularExpression ? matchRegularExpression[0] : null;
+  getBenchmarkForChangeModel(data, brandElement, modelElement);
 }
 
 // メモリーのモデル名をスロット数に合わせて動的に表示する関数
@@ -173,19 +178,7 @@ function createMemoryModels(data, brand, sheets, modelElement) {
   createDropdown(modelElement, models);
 }
 
-// ストレージのモデル名を記憶容量に合わせて動的に表示する関数
-function createStorageModels(data, brand, capacity, modelElement) {
-  let models = data
-    .filter(
-      (item) =>
-        item.Brand === brand && getStorageCapacity(item.Model) === capacity
-    )
-    .map((item) => item.Model)
-    .sort();
-
-  createDropdown(modelElement, models);
-}
-
+////////// ストレージ部分の処理についてのメソッド //////////
 // データからストレージの種類を取得する関数
 function createStorageTypes(data, storageTypeElement) {
   let types = new Set();
@@ -246,6 +239,50 @@ function createStorageCapacities(data, type, capacityElement) {
   createDropdown(capacityElement, sortCapacityStrings);
 }
 
+// ストレージのブランド名を動的に表示する関数
+function createStorageBrands(data, type, brandElement, modelElement) {
+  let brands = new Set();
+  data
+    .filter((item) => item.Type === type)
+    .forEach((item) => brands.add(item.Brand));
+
+  // brandsを渡す前に配列に変換する事で、エラーチェックを通過している
+  const sortBrands = Array.from(brands).sort();
+  createDropdown(brandElement, sortBrands);
+
+  // ブランドの選択に応じてモデルの表示を変更するイベントリスナー
+  brandElement.addEventListener("change", (event) => {
+    // ドロップダウン内のブランド名を取得する
+    let selectBrand = event.target.value;
+    let selectCapacity = elementsList.storageCapacity.value;
+    // ブランド名に応じてモデル名が更新される
+    createStorageModels(data, selectBrand, selectCapacity, modelElement);
+
+    const selectedBrand = event.target.value;
+    const selectedModel = elementsList.storageModels.value;
+    console.log(getBenchmark(data, selectedBrand, selectedModel));
+  });
+
+  const initialCapacity = elementsList.storageCapacity.value;
+  // 取得したデータから、ブランド・モデル名を表示する為に関数を呼び出す
+  createStorageModels(data, sortBrands[0], initialCapacity, modelElement);
+
+  getBenchmarkForChangeModel(data, brandElement, modelElement);
+}
+
+// ストレージのモデル名を記憶容量に合わせて動的に表示する関数
+function createStorageModels(data, brand, capacity, modelElement) {
+  let models = data
+    .filter(
+      (item) =>
+        item.Brand === brand && getStorageCapacity(item.Model) === capacity
+    )
+    .map((item) => item.Model)
+    .sort();
+
+  createDropdown(modelElement, models);
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   function getLogData(...elementIds) {
     elementIds.forEach((elementId) => {
@@ -254,7 +291,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const selectOption = element.options[element.selectedIndex].text;
         console.log(`${elementId}: ${selectOption}`);
       } else {
-        console.error(`${elementId} is empty`);
+        console.error(`${elementId} が空欄です`);
       }
     });
   }
@@ -305,7 +342,6 @@ window.addEventListener("DOMContentLoaded", () => {
         selectSheetsText,
         elementsList.memoryModels
       );
-      // console.log(selectSheetsText);
     });
   });
 
@@ -358,23 +394,24 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+/////////////
+const dropdownNameObjects = {
+  cpuBrandsMenu: "CPU-Brand",
+  cpuModelsMenu: "CPU-Model",
+  gpuBrandsMenu: "GPU-Brand",
+  gpuModelsMenu: "GPU-Model",
+  numbersOfMemory: "Memory-Slots",
+  memoryBrandsMenu: "Memory-Brand",
+  memoryModelsMenu: "Memory-Model",
+  storagesType: "Storage-Type",
+  storageCapacity: "Storage-Capacity",
+  storageBrandsMenu: "Storage-Brand",
+  storageModelsMenu: "Storage-Model",
+};
+
 // 全てのドロップダウン要素で値が満たされているか確認する関数
 function allDropdownsSelected() {
-  const dropdownElements = [
-    "cpuBrandsMenu",
-    "cpuModelsMenu",
-    "gpuBrandsMenu",
-    "gpuModelsMenu",
-    "numbersOfMemory",
-    "memoryBrandsMenu",
-    "memoryModelsMenu",
-    "storagesType",
-    "storageCapacity",
-    "storageBrandsMenu",
-    "storageModelsMenu",
-  ];
-
-  for (let dropdownId of dropdownElements) {
+  for (let dropdownId of Object.keys(dropdownNameObjects)) {
     const dropdown = document.getElementById(dropdownId);
     // 各ドロップダウン(option)の値が全て存在していればtrue、
     // 一つでも空欄があればfalseを返す
@@ -388,17 +425,28 @@ function allDropdownsSelected() {
 // 選択されたメニューの文字列データを表示する関数
 function displaySelectMenu() {
   if (!allDropdownsSelected()) {
-    console.error("空欄があります");
-    alert("空欄があります");
+    console.error("空欄のままの選択肢が存在します");
     return;
   }
 
   let displayText = "";
   const dropdowns = document.querySelectorAll("select");
+
   dropdowns.forEach((dropdown) => {
-    displayText += `${dropdown.id}: ${
-      dropdown.options[dropdown.selectedIndex].text
-    }<br>`;
+    const modelName = dropdown.options[dropdown.selectedIndex].text;
+    const partsName = dropdownNameObjects[dropdown.id] || dropdown.id;
+
+    console.log(`${partsName} - ${modelName}`);
+
+    displayText += `
+      <div class="font-monospace d-flex align-items-center justify-content-start">
+        <table class="mb-auto">
+          <td class="ps-3 pt-2 pb-2" style="font-size: 1.25rem">
+            ${partsName}: ${modelName}
+          </td>
+        </table>
+      </div>
+    `;
   });
 
   document.getElementById("displayStructure").innerHTML = displayText;
