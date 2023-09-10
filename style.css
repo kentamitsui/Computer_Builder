@@ -1,0 +1,25 @@
+body {
+  font-size: 100%;
+}
+
+.wf-notosansjapanese {
+  font-family: "Noto Sans JP";
+}
+
+p {
+  font-size: 1.5rem;
+}
+
+th {
+  font-size: 1.35rem;
+}
+
+td {
+  font-size: 1.3rem;
+}
+
+select {
+  width: 12rem !important;
+  height: 4rem !important;
+  font-size: 0.9rem !important;
+}

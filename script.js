@@ -61,6 +61,7 @@ function getBenchmark(data, brand, model) {
   return item ? item.Benchmark : console.error("値がありません");
 }
 
+// 各パーツのモデルが変更される度にベンチマークの数値を取得する関数
 function getBenchmarkForChangeModel(data, brands, models) {
   models.addEventListener("change", () => {
     const selectedBrand = brands.value;
@@ -395,23 +396,23 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 /////////////
-const dropdownNameObjects = {
-  cpuBrandsMenu: "CPU-Brand",
-  cpuModelsMenu: "CPU-Model",
-  gpuBrandsMenu: "GPU-Brand",
-  gpuModelsMenu: "GPU-Model",
-  numbersOfMemory: "Memory-Slots",
-  memoryBrandsMenu: "Memory-Brand",
-  memoryModelsMenu: "Memory-Model",
-  storagesType: "Storage-Type",
-  storageCapacity: "Storage-Capacity",
-  storageBrandsMenu: "Storage-Brand",
-  storageModelsMenu: "Storage-Model",
+const dropdownDataMapping = {
+  cpuBrandsMenu: fetchData(apiList.cpu),
+  cpuModelsMenu: fetchData(apiList.cpu),
+  gpuBrandsMenu: fetchData(apiList.gpu),
+  gpuModelsMenu: fetchData(apiList.gpu),
+  numbersOfMemory: fetchData(apiList.memory),
+  memoryBrandsMenu: fetchData(apiList.memory),
+  memoryModelsMenu: fetchData(apiList.memory),
+  storagesType: mergeStorageData(),
+  storageCapacity: mergeStorageData(),
+  storageBrandsMenu: mergeStorageData(),
+  storageModelsMenu: mergeStorageData(),
 };
 
-// 全てのドロップダウン要素で値が満たされているか確認する関数
+// 全てのドロップダウンメニューが埋められているかを確認する関数
 function allDropdownsSelected() {
-  for (let dropdownId of Object.keys(dropdownNameObjects)) {
+  for (let dropdownId of Object.keys(dropdownDataMapping)) {
     const dropdown = document.getElementById(dropdownId);
     // 各ドロップダウン(option)の値が全て存在していればtrue、
     // 一つでも空欄があればfalseを返す
@@ -426,33 +427,133 @@ function allDropdownsSelected() {
 function displaySelectMenu() {
   if (!allDropdownsSelected()) {
     console.error("空欄のままの選択肢が存在します");
-    return;
+    return Promise.reject("空欄のままの選択肢が存在します");
   }
 
   let displayText = "";
+  let benchmarks = {};
+
   const dropdowns = document.querySelectorAll("select");
+  const benchmarkPromisesObject = [];
 
   dropdowns.forEach((dropdown) => {
     const modelName = dropdown.options[dropdown.selectedIndex].text;
-    const partsName = dropdownNameObjects[dropdown.id] || dropdown.id;
+    const partType = dropdown.getAttribute("data-part-type") || "";
 
-    console.log(`${partsName} - ${modelName}`);
+    const benchmarkPromise = getBenchmarkForDropdownId(
+      dropdown.id,
+      modelName
+    ).then((benchmark) => {
+      benchmarks[dropdown.id] = benchmark;
 
-    displayText += `
-      <div class="font-monospace d-flex align-items-center justify-content-start">
-        <table class="mb-auto">
-          <td class="ps-3 pt-2 pb-2" style="font-size: 1.25rem">
-            ${partsName}: ${modelName}
-          </td>
+      console.log(`${modelName}: ${benchmark}: ${partType}`);
+
+      // partTypeの属性(各パーツの名前)が存在する場合にのみ表示をする
+      displayText += `
+        <table class="mb-0 align-items-start justify-content-start">
+          ${
+            partType
+              ? `
+          <tr>
+            <th
+              class="ps-3 text-uppercase"
+              style="font-size: 1.5rem; border-spacing: 0"
+            >
+              ${partType}
+            </th>
+          </tr>
+          `
+              : ""
+          }
+          <tr>
+            <td class="ps-5" style="font-size: 1.3rem; border-spacing: 0">
+              ${modelName}
+            </td>
+          </tr>
         </table>
-      </div>
-    `;
+      `;
+    });
+    benchmarkPromisesObject.push(benchmarkPromise);
   });
 
-  document.getElementById("displayStructure").innerHTML = displayText;
+  return Promise.all(benchmarkPromisesObject).then(() => {
+    document.getElementById("displayStructure").innerHTML = displayText;
+    return benchmarks;
+  });
 }
 
-// クリックしたら各パーツの文字列データを表示する
-document
-  .getElementById("calcPerformance")
-  .addEventListener("click", displaySelectMenu);
+function getBenchmarkForDropdownId(dropdownId, modelName) {
+  const dataPromise = dropdownDataMapping[dropdownId];
+  if (!dataPromise) {
+    console.error(`No data found for dropdown ID: ${dropdownId}`);
+    return Promise.reject(`No data found for dropdown ID: ${dropdownId}`);
+  }
+
+  return dataPromise.then((data) => {
+    const brandDropdownId = dropdownId.replace("Models", "Brands");
+    const brandElement = document.getElementById(brandDropdownId);
+    const selectedBrand = brandElement ? brandElement.value : null;
+
+    return getBenchmark(data, selectedBrand, modelName);
+  });
+}
+
+function calculatePerformance(benchmarks, type = "gaming") {
+  const weights = {
+    gaming: {
+      gpu: 0.6,
+      cpu: 0.25,
+      ram: 0.125,
+      storage: 0.025,
+    },
+    work: {
+      gpu: 0.25,
+      cpu: 0.6,
+      ram: 0.1,
+      storage: 0.05,
+    },
+  };
+
+  const typeWeights = weights[type];
+
+  let score = 0;
+
+  score += benchmarks.cpuModelsMenu * typeWeights.cpu;
+  score += benchmarks.gpuModelsMenu * typeWeights.gpu;
+  score += benchmarks.memoryModelsMenu * typeWeights.ram;
+
+  // If the storage is SSD, we consider the benchmark can go up to 400%
+  if (benchmarks.storagesType === "SSD") {
+    score += Math.min(benchmarks.storageModelsMenu, 4) * typeWeights.storage;
+  } else {
+    score += benchmarks.storageModelsMenu * typeWeights.storage;
+  }
+
+  return Math.round(score * 100) / 100;
+}
+
+document.getElementById("calcPerformance").addEventListener("click", () => {
+  displaySelectMenu()
+    .then((benchmarks) => {
+      let displayText = "";
+      const gamingScore = calculatePerformance(benchmarks, "gaming");
+      const workScore = calculatePerformance(benchmarks, "work");
+
+      // console.log(`Gaming Score: ${gamingScore}`);
+      // console.log(`Work Score: ${workScore}`);
+
+      displayText += `
+        <div class="d-flex align-items-center justify-content-center">
+          <p class="mb-0 ps-3 py-3" style="font-size: 1.85rem">
+            Gaming Score: ${gamingScore}  Work Score: ${workScore}
+          </p>
+        </div>
+      `;
+
+      document.getElementById("displayPerformance").innerHTML = displayText;
+      return displayText;
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+});
