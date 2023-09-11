@@ -6,6 +6,17 @@ body {
   font-family: "Noto Sans JP";
 }
 
+.custom-main {
+  max-height: calc(100vh - 100px);
+  width: 100%;
+  padding: 1rem;
+}
+
+.d-flex.flex-column.align-items-center > * {
+  width: 75%;
+  max-width: 960px;
+}
+
 p {
   font-size: 1.5rem;
 }
@@ -19,7 +30,7 @@ td {
 }
 
 select {
-  width: 12rem !important;
+  width: 15rem !important;
   height: 4rem !important;
   font-size: 0.9rem !important;
 }
