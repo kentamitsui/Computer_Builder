@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-bs-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,14 +11,34 @@
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
-      integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
       crossorigin="anonymous"
+      integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
     />
     <title>Computer Builder</title>
   </head>
-  <body class="bg-secondary wf-notosansjapanese">
+  <body class="bg-secondary-subtle wf-notosansjapanese">
     <header>
-      <h1 class="bg-dark text-center text-white mb-0 p-3">Computer Builder</h1>
+      <h1 class="bg-black text-center text-white mb-0 p-3">Computer Builder</h1>
+      <!-- トグルボタンを用いてダークモードの切り替えを行う -->
+      <div
+        class="position-relative container d-flex align-content-center justify-content-end"
+      >
+        <div class="py-3 mb-0 fs-3">
+          <div class="form-check form-switch mb-0">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="colorModeSwitcher"
+            />
+            <i class="bi bi-brightness-high"></i>
+          </div>
+        </div>
+      </div>
+      <!--  -->
     </header>
     <!-- CPU選択部分 -->
     <main
@@ -190,12 +210,7 @@
           </td>
         </tr>
       </table>
-      <!-- 構成内容と性能評価の表示 -->
-      <!-- <div class="bg-dark text-white">
-        <div class="text-center mb-0 p-2 my-4" style="font-size: 1.85rem">
-          PCの構成内容と用途別の性能を表示します
-      </div>
-    </div> -->
+      <!--  -->
       <div class="text-center mb-0 p-2 my-4">
         <button
           type="submit"
@@ -203,7 +218,7 @@
           style="font-size: 1.85rem"
           id="calcPerformance"
         >
-          性能を計測する
+          性能の計測
         </button>
       </div>
       <div id="displayStructure"></div>

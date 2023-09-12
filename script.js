@@ -393,6 +393,13 @@ window.addEventListener("DOMContentLoaded", () => {
       );
     });
   });
+  // "性能を計測"ボタンを押した際に、画面下までスクロールする機能
+  const btn = document.getElementById("calcPerformance");
+  const targetDiv = document.getElementById("displayStructure");
+
+  btn.addEventListener("click", function () {
+    targetDiv.scrollIntoView({ behavior: "smooth" });
+  });
 });
 
 /////////////
@@ -427,6 +434,7 @@ function allDropdownsSelected() {
 function displaySelectMenu() {
   if (!allDropdownsSelected()) {
     console.error("空欄のままの選択肢が存在します");
+    alert("空欄のままの選択肢が存在します");
     return Promise.reject("空欄のままの選択肢が存在します");
   }
 
@@ -522,7 +530,6 @@ function calculatePerformance(benchmarks, type = "gaming") {
   score += benchmarks.gpuModelsMenu * typeWeights.gpu;
   score += benchmarks.memoryModelsMenu * typeWeights.ram;
 
-  // If the storage is SSD, we consider the benchmark can go up to 400%
   if (benchmarks.storagesType === "SSD") {
     score += Math.min(benchmarks.storageModelsMenu, 4) * typeWeights.storage;
   } else {
@@ -556,4 +563,36 @@ document.getElementById("calcPerformance").addEventListener("click", () => {
     .catch((error) => {
       console.error(error);
     });
+});
+
+// ダークモードに関するメソッド等
+const checkboxElement = document.getElementById("colorModeSwitcher");
+const modeSwitch = localStorage.getItem("lightSwitch");
+
+if (modeSwitch === "dark") {
+  checkboxElement.checked = true;
+  setTheme("dark");
+} else {
+  checkboxElement.checked = false;
+  setTheme("light");
+}
+
+function setTheme(mode) {
+  document.documentElement.setAttribute("data-bs-theme", mode);
+  localStorage.setItem("lightSwitch", mode);
+
+  if (mode === "dark") {
+    document.querySelector("i").className = "bi bi-moon-stars-fill";
+  } else {
+    document.querySelector("i").className = "bi bi-brightness-high";
+  }
+}
+
+// チェックボックスが変更された時のイベントリスナー
+checkboxElement.addEventListener("change", function () {
+  if (this.checked) {
+    setTheme("dark");
+  } else {
+    setTheme("light");
+  }
 });
