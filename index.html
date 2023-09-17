@@ -1,123 +1,229 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja" data-bs-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Noto+Sans+JP"
+      rel="stylesheet"
+    />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
-      integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
       crossorigin="anonymous"
+      integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
     />
     <title>Computer Builder</title>
   </head>
-  <body class="bg-secondary vh-100 font-monospace">
-    <div>
-      <h1 class="bg-dark text-center text-white p-2 m-0">Computer Builder</h1>
-    </div>
+  <body class="bg-secondary-subtle wf-notosansjapanese">
+    <header>
+      <h1 class="bg-black text-center text-white mb-0 p-3">Computer Builder</h1>
+      <!-- トグルボタンを用いてダークモードの切り替えを行う -->
+      <div
+        class="position-relative container d-flex align-content-center justify-content-end"
+      >
+        <div class="py-3 mb-0 fs-3">
+          <div class="form-check form-switch mb-0">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="colorModeSwitcher"
+            />
+            <i class="bi bi-brightness-high"></i>
+          </div>
+        </div>
+      </div>
+      <!--  -->
+    </header>
     <!-- CPU選択部分 -->
-    <div class="p-3">
-      <h4 class="m-0">1. CPUを選択して下さい</h4>
-    </div>
-    <div class="d-flex flex-wrap align-items-center justify-content-start">
-      <h4 class="m-0 p-3">ブランド</h4>
-      <select
-        name="brands"
-        id="cpuBrandsMenu"
-        class="w-25 mx-3 form-select"
-      ></select>
-      <h4 class="m-0 p-3">モデル</h4>
-      <select
-        name="brands"
-        id="cpuModelsMenu"
-        class="w-25 mx-3 form-select"
-      ></select>
-    </div>
-    <!-- GPU選択画面 -->
-    <div class="p-3">
-      <h4 class="m-0">2. GPUを選択して下さい</h4>
-    </div>
-    <div class="d-flex align-items-center justify-content-start">
-      <h4 class="m-0 p-3">ブランド</h4>
-      <select
-        name="brands"
-        id="gpuBrandsMenu"
-        class="w-25 mx-3 form-select"
-      ></select>
-      <h4 class="m-0 p-3">モデル</h4>
-      <select
-        name="brands"
-        id="gpuModelsMenu"
-        class="w-25 mx-3 form-select"
-      ></select>
-    </div>
-    <!-- メモリ選択画面 -->
-    <div class="p-3">
-      <h4 class="m-0">3. メモリを選択して下さい</h4>
-    </div>
-    <div class="d-flex flex-wrap align-items-center justify-content-start">
-      <h4 class="m-0 p-3">スロット数</h4>
-      <select name="brands" id="numbersOfMemory" class="w-25 mx-3 form-select">
-        <option>1</option>
-        <option>2</option>
-        <option>4</option>
-        <option>8</option>
-      </select>
-      <h4 class="m-0 p-3">ブランド</h4>
-      <select
-        name="brands"
-        id="memoryBrandsMenu"
-        class="w-25 mx-3 form-select"
-      ></select>
-      <h4 class="m-0 p-3">モデル</h4>
-      <select
-        name="brands"
-        id="memoryModelsMenu"
-        class="w-25 mx-3 form-select"
-      ></select>
-    </div>
-    <!-- ストレージ選択画面 -->
-    <div class="p-3">
-      <h4 class="m-0">4. ストレージを選択して下さい</h4>
-    </div>
-    <div class="d-flex flex-wrap align-items-center justify-content-start">
-      <h4 class="m-0 p-3">種類</h4>
-      <select
-        name="brands"
-        id="storagesType"
-        class="w-25 mx-3 form-select"
-      ></select>
-      <h4 class="m-0 p-3">記憶容量</h4>
-      <select
-        name="brands"
-        id="storageCapacity"
-        class="w-25 mx-3 form-select"
-      ></select>
-      <h4 class="m-0 p-3">ブランド</h4>
-      <select
-        name="brands"
-        id="storageBrandsMenu"
-        class="w-25 mx-3 form-select"
-      ></select>
-      <h4 class="m-0 p-3">モデル</h4>
-      <select
-        name="brands"
-        id="storageModelsMenu"
-        class="w-25 mx-3 form-select"
-      ></select>
-    </div>
-    <!-- 構成内容と性能評価の表示 -->
-    <div class="font-monospace">
-      <div class="m-0 p-3 d-flex align-items-center justify-content-center">
-        <button type="submit" class="btn btn-dark" id="calcPerformance">
-          性能を計測する
+    <main
+      class="custom-main overflow-auto d-flex flex-column align-items-center"
+    >
+      <p class="mb-0 ps-3 py-4">1. CPUを選択して下さい</p>
+      <table
+        class="d-flex flex-wrap align-items-center justify-content-start ps-3"
+      >
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">ブランド</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="cpuBrandsMenu"
+              class="form-select"
+              data-part-type="CPU"
+            ></select>
+          </td>
+        </tr>
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">モデル</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="cpuModelsMenu"
+              class="form-select text-wrap"
+            ></select>
+          </td>
+        </tr>
+      </table>
+      <!-- GPU選択画面 -->
+      <p class="mb-0 ps-3 py-4">2. CPUを選択して下さい</p>
+      <table
+        class="d-flex flex-wrap align-items-center justify-content-start ps-3"
+      >
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">ブランド</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="gpuBrandsMenu"
+              class="form-select"
+              data-part-type="GPU"
+            ></select>
+          </td>
+        </tr>
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">モデル</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="gpuModelsMenu"
+              class="form-select text-wrap"
+            ></select>
+          </td>
+        </tr>
+      </table>
+      <!-- メモリ選択画面 -->
+      <p class="mb-0 ps-3 py-4">3. メモリを選択して下さい</p>
+      <table
+        class="d-flex flex-wrap align-items-center justify-content-start ps-3"
+      >
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">スロット数</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="numbersOfMemory"
+              class="form-select"
+              style="width: 4rem !important"
+              data-part-type="Memory"
+            >
+              <option>1</option>
+              <option>2</option>
+              <option>4</option>
+              <option>8</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">ブランド</th>
+        </tr>
+
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="memoryBrandsMenu"
+              class="form-select"
+            ></select>
+          </td>
+        </tr>
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">モデル</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="memoryModelsMenu"
+              class="form-select text-wrap"
+            ></select>
+          </td>
+        </tr>
+      </table>
+      <!-- ストレージ選択画面 -->
+      <p class="mb-0 ps-3 pt-2">4. ストレージを選択して下さい</p>
+      <table
+        class="d-flex flex-wrap align-items-center justify-content-start ps-3"
+      >
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">種類</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="storagesType"
+              class="form-select"
+              data-part-type="Storage"
+            ></select>
+          </td>
+        </tr>
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">記憶容量</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="storageCapacity"
+              class="form-select"
+            ></select>
+          </td>
+        </tr>
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">ブランド</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="storageBrandsMenu"
+              class="form-select"
+            ></select>
+          </td>
+        </tr>
+        <tr>
+          <th class="mb-0 px-0 py-0 pb-2">モデル</th>
+        </tr>
+        <tr>
+          <td class="mb-0 px-0 py-0 pb-4">
+            <select
+              name="brands"
+              id="storageModelsMenu"
+              class="form-select text-wrap"
+            ></select>
+          </td>
+        </tr>
+      </table>
+      <!--  -->
+      <div class="text-center mb-0 p-2 my-4">
+        <button
+          type="submit"
+          class="btn btn-dark"
+          style="font-size: 1.85rem"
+          id="calcPerformance"
+        >
+          性能の計測
         </button>
       </div>
-      <div class="bg-dark text-white">
-        <h1 class="text-center">構成と性能を表示します</h1>
-      </div>
       <div id="displayStructure"></div>
-    </div>
+      <div id="displayPerformance"></div>
+    </main>
     <script src="script.js"></script>
   </body>
 </html>
